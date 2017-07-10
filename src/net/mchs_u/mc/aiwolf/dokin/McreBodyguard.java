@@ -1,4 +1,4 @@
-package net.mchs_u.mc.aiwolf.curry_snapshot;
+package net.mchs_u.mc.aiwolf.dokin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +20,7 @@ public class McreBodyguard extends McreVillager {
 	public Agent guard() {
 		List<Agent> candidate = new ArrayList<>(getGameInfo().getAliveAgentList());
 		candidate.remove(getGameInfo().getAgent());
+		candidate.remove(getGameInfo().getLatestExecutedAgent());
 		return max(candidate, getSubjectiveEstimate().getVillagerTeamLikeness(), true);
 	}
 	

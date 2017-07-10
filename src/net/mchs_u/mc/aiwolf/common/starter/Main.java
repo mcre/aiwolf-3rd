@@ -20,8 +20,8 @@ public class Main {
 		
 		List<PlayerDefinition> playerDefinitions = new ArrayList<>();
 		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.baikin04.McrePlayer.class, false, null, "baikin"));
-		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.curry_snapshot.McrePlayer.class, false, null, "curry_ss"));
-		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.curry.McrePlayer.class, isVisualize, role, "curry"));
+		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.curry.McrePlayer.class, false, null, "curry"));
+		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.dokin.McrePlayer.class, isVisualize, role, "dokin"));
 
 		int count = 0;
 		while(playerDefinitions.size() < playerNum){

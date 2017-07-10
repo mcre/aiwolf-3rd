@@ -1,4 +1,4 @@
-package net.mchs_u.mc.aiwolf.baikin04;
+package net.mchs_u.mc.aiwolf.dokin;
 
 import org.aiwolf.client.lib.ComingoutContentBuilder;
 import org.aiwolf.client.lib.Content;

@@ -1,4 +1,4 @@
-package net.mchs_u.mc.aiwolf.curry;
+package net.mchs_u.mc.aiwolf.dokin;
 
 import org.aiwolf.common.data.Agent;
 import org.aiwolf.common.data.Role;
