@@ -100,6 +100,9 @@ public abstract class AbstractMcreRole implements EstimatePlayer {
 	}
 	
 	protected Agent min(Collection<Agent> candidate, Map<Agent, Double> likeness, boolean plus){//村人らしさの場合true,人狼らしさの場合false
+		if(likeness == null)
+			return null;
+		
 		List<Agent> candidateList = new ArrayList<Agent>(candidate); 
 		
 		Agent ret = null;
@@ -121,6 +124,9 @@ public abstract class AbstractMcreRole implements EstimatePlayer {
 	}
 	
 	protected Agent max(Collection<Agent> candidate, Map<Agent, Double> likeness, boolean plus){//村人らしさの場合true,人狼らしさの場合false
+		if(likeness == null)
+			return null;
+		
 		List<Agent> candidateList = new ArrayList<Agent>(candidate); 
 		
 		Agent ret = null;
