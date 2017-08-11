@@ -19,6 +19,7 @@ import org.aiwolf.common.net.GameSetting;
 import org.aiwolf.common.util.Pair;
 
 import net.mchs_u.mc.aiwolf.common.AbstractEstimate;
+import net.mchs_u.mc.aiwolf.common.AgentTargetResult;
 import net.mchs_u.mc.aiwolf.common.Probabilities;
 import net.mchs_u.mc.aiwolf.common.RoleCombination;
 
@@ -27,20 +28,28 @@ public class Estimate extends AbstractEstimate{
 	/***********************************************
 	 * 初期設定
 	 */
-	
+
 	private Map<String,Double> rates = null;
+	private Probabilities probs = null;
 	
 	private List<Agent> agents = null;
-	private List<Agent> aliveAgents = null;
 	
-	private Probabilities probs = null;
+	private List<Agent> aliveAgents = null;
 	private Map<Agent, Role> coMap = null;
+	private Map<Agent, Role> definedRoleMap = null;
+	private Map<Agent, Species> definedSpeciesMap = null;
+	private Set<Agent> teamMemberWolves = null;
+	private List<Agent> guardedAgentsWhenAttackFailure = null;
+	private List<AgentTargetResult> divinedHistory = null;
+	private List<AgentTargetResult> identifiedHistory = null;
+	private List<Agent> attackedAgents = null;
+	private List<Vote> voteHistory = null;
 	
 	private Map<Agent, Double> werewolfLikeness = null;
 	private Map<Agent, Double> villagerTeamLikeness = null;
-	private Map<Integer, Double> aliveWerewolvesNumberProbability = null; // 人狼の残数推定
-	private Map<Integer, Double> alivePossessedsNumberProbability = null; // 狂人の残数推定
-	private Map<Integer, Double> aliveVillagerTeamNumberProbability = null; // 村人の残数推定
+	private Map<Integer, Double> aliveWerewolvesNumberProbability = null;
+	private Map<Integer, Double> alivePossessedsNumberProbability = null;
+	private Map<Integer, Double> aliveVillagerTeamNumberProbability = null;
 	
 	private Map<Agent, Agent> todaysVotePlanMap = null;
 	private Map<Agent, Pair<Integer, Agent>> todaysVoteRequestMap = null;
@@ -63,6 +72,9 @@ public class Estimate extends AbstractEstimate{
 		rates.put("2_BODYGUARD_CO_FROM_VILLAGER_TEAM"   , 0.001d);
 		rates.put("ONLY_SEER_CO_FROM_WEREWOLF_TEAM"     , 0.010d);
 		rates.put("ONLY_MEDIUM_CO_FROM_WEREWOLF_TEAM"   , 0.010d);
+		rates.put("GUARDED_WEREWOLF_WHEN_ATTACK_FAILURE", 0.100d);
+		rates.put("POSSESSED_CO_FROM_OUTSIDE_POSSESSED" , 0.010d);
+		rates.put("WEREWOLF_CO_FROM_OUTSIDE_WEREWOLF"   , 0.010d);
 		
 		rates.put("NO_WEREWOLVES"                       , 0.000d);
 		rates.put("WEREWOLVES_ARE_MORE_THAN_HUMANS"     , 0.000d);
@@ -72,14 +84,19 @@ public class Estimate extends AbstractEstimate{
 		
 		rates.put("TEAM_MEMBER_WOLF"                    , 0.500d);
 		
-		rates.put("GUARDED_WEREWOLF_WHEN_ATTACK_FAILURE", 0.100d);
-		rates.put("POSSESSED_CO_FROM_OUTSIDE_POSSESSED" , 0.010d);
-		rates.put("WEREWOLF_CO_FROM_OUTSIDE_WEREWOLF"   , 0.010d);
 		rates.put("NUMBER_PROBABILITY_OF_CONVICTION"    , 0.800d); // 確率がいくら以上だったらその人数が残っていることを確信するか（0.5以下に設定してはいけない）
 		rates.put("WEREWOLF_LIKENESS_OF_CONVICTION"     , 0.800d); // らしさがいくら以上だったらその人が人狼であることを確信するか
 		
 		coMap = new HashMap<>();
-
+		definedRoleMap = new HashMap<>();
+		definedSpeciesMap = new HashMap<>();
+		teamMemberWolves = new HashSet<>();
+		divinedHistory = new ArrayList<>();
+		identifiedHistory = new ArrayList<>();
+		guardedAgentsWhenAttackFailure = new ArrayList<>();
+		attackedAgents = new ArrayList<>();
+		voteHistory = new ArrayList<>();
+		
 		probs = new Probabilities(agents, gameSetting);
 	}
 	
@@ -87,7 +104,7 @@ public class Estimate extends AbstractEstimate{
 	 * 状況のアップデート(public)
 	 */
 	
-	public void dayStart(GameInfo gameInfo){
+	public void dayStart(GameInfo gameInfo){		
 		todaysVotePlanMap = new HashMap<>();
 		todaysVoteRequestMap = new HashMap<>();
 		updateAliveAgentList(gameInfo.getAliveAgentList());
@@ -97,6 +114,8 @@ public class Estimate extends AbstractEstimate{
 	
 	//確定した役職（自分の役職、仲間の狼など）以外の確率をゼロにする
 	public void updateDefinedRole(Agent agent, Role role){
+		definedRoleMap.put(agent, role);
+		
 		for(RoleCombination rc: probs.getRoleCombinations()){
 			if(role == Role.POSSESSED){
 				if(!rc.isPossessed(agent))
@@ -113,6 +132,8 @@ public class Estimate extends AbstractEstimate{
 	
 	//確定した人種（自分目線の占い結果など）以外の確率をゼロにする
 	public void updateDefinedSpecies(Agent agent, Species species){
+		definedSpeciesMap.put(agent, species);
+		
 		for(RoleCombination rc: probs.getRoleCombinations()){
 			if(species == Species.WEREWOLF){
 				if(!rc.isWerewolf(agent))
@@ -126,6 +147,8 @@ public class Estimate extends AbstractEstimate{
 	
 	//仲間の狼の確率を下げる（身内切りのためゼロにはしない）（村人目線のときにつかう）
 	public void updateTeamMemberWolf(List<Agent> agents){
+		teamMemberWolves.addAll(agents);
+		
 		for(RoleCombination rc: probs.getRoleCombinations()){
 			for(Agent a: agents){
 				if(rc.isWerewolf(a)){
@@ -143,12 +166,12 @@ public class Estimate extends AbstractEstimate{
 		if(deadAgentsCount > 0)
 			return;
 		
+		guardedAgentsWhenAttackFailure.add(guardedAgent);
 		for(RoleCombination rc: probs.getRoleCombinations()){
 			if(rc.isWerewolf(guardedAgent))
 				probs.update(rc, rates.get("GUARDED_WEREWOLF_WHEN_ATTACK_FAILURE"));
 		}
 	}
-	
 	
 	public void updateTalk(Talk talk){
 		Content content = new Content(talk.getText());
@@ -214,6 +237,7 @@ public class Estimate extends AbstractEstimate{
 
 			break;
 		case DIVINED:
+			divinedHistory.add(new AgentTargetResult(talk.getAgent(), content.getTarget(), content.getResult()));
 			for(RoleCombination rc: probs.getRoleCombinations()){
 				//狂人が人狼に黒出し
 				if(rc.isPossessed(talk.getAgent()) && rc.isWerewolf(content.getTarget()))
@@ -235,6 +259,7 @@ public class Estimate extends AbstractEstimate{
 			}			
 			break;
 		case IDENTIFIED:
+			identifiedHistory.add(new AgentTargetResult(talk.getAgent(), content.getTarget(), content.getResult()));
 			for(RoleCombination rc: probs.getRoleCombinations()){
 				//村人陣営が嘘の霊能
 				if(rc.isVillagerTeam(talk.getAgent())){
@@ -277,6 +302,7 @@ public class Estimate extends AbstractEstimate{
 	}
 	
 	private void updateVoteList(List<Vote> voteList){
+		voteHistory.addAll(voteList);
 		for(Vote v: voteList){
 			for(RoleCombination rc: probs.getRoleCombinations()){
 				// 狂人から人狼への投票
@@ -292,7 +318,8 @@ public class Estimate extends AbstractEstimate{
 		}
 	}	
 	
-	private void updateDeadAgentList(List<Agent> agents){		
+	private void updateDeadAgentList(List<Agent> agents){
+		attackedAgents.addAll(agents);
 		for(RoleCombination rc: probs.getRoleCombinations())
 			for(Agent agent: agents)
 				if(rc.isWerewolf(agent))
@@ -456,10 +483,58 @@ public class Estimate extends AbstractEstimate{
 	}
 	
 	/***********************************************
+	 * 情報を返す(Getter)
+	 */
+	
+	public Map<Agent, Role> getCoMap() {
+		return coMap;
+	}
+
+	public Map<Agent, Role> getDefinedRoleMap() {
+		return definedRoleMap;
+	}
+
+	public Map<Agent, Species> getDefinedSpeciesMap() {
+		return definedSpeciesMap;
+	}
+
+	public Set<Agent> getTeamMemberWolves() {
+		return teamMemberWolves;
+	}
+
+	public List<Agent> getGuardedAgentsWhenAttackFailure() {
+		return guardedAgentsWhenAttackFailure;
+	}
+
+	public List<AgentTargetResult> getDivinedHistory() {
+		return divinedHistory;
+	}
+
+	public List<AgentTargetResult> getIdentifiedHistory() {
+		return identifiedHistory;
+	}
+
+	public List<Agent> getAttackedAgents() {
+		return attackedAgents;
+	}
+
+	public List<Vote> getVoteHistory() {
+		return voteHistory;
+	}
+
+	public Map<Agent, Agent> getTodaysVotePlanMap() {
+		return todaysVotePlanMap;
+	}
+
+	public Map<Agent, Pair<Integer, Agent>> getTodaysVoteRequestMap() {
+		return todaysVoteRequestMap;
+	}
+	
+	/***********************************************
 	 * 情報を返す(他)
 	 */
 	
-	// 各エージェントの直近CO役職
+	// その役職にCOしている人のリスト(複数回COした場合新しい方のみ)
 	public Set<Agent> getCoSet(Role role){
 		Set<Agent> ret = new HashSet<>();
 		for(Agent a: coMap.keySet()) {
@@ -468,7 +543,7 @@ public class Estimate extends AbstractEstimate{
 		}
 		return ret;
 	}	
-	
+
 	// 今日一番投票宣言のターゲットが多いエージェントのリスト(同数の場合があるのでリスト)
 	public List<Agent> getMostVotePlanedAgents(){
 		List<Agent> ret = new ArrayList<>();
