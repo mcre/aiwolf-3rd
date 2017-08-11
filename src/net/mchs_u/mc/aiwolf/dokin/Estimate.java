@@ -152,6 +152,7 @@ public class Estimate extends AbstractEstimate{
 		
 	//らしさと人数の確率を再計算
 	private void calcLikenessAndProbability(){
+		probs.removeZeros();
 		probs.resetUpdated();
 		calcLikeness();
 		calcProbability();

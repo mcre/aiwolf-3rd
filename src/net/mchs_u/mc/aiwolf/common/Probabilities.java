@@ -12,6 +12,8 @@ import org.aiwolf.common.data.Role;
 import org.aiwolf.common.net.GameSetting;
 
 public class Probabilities {
+	private static final double EPS = 0.0001d;
+	
 	private boolean updated = false;
 	private Map<RoleCombination, Double> probs = null;
 
@@ -73,6 +75,16 @@ public class Probabilities {
 	public void remove(RoleCombination rc) {
 		probs.remove(rc);
 		updated = true;
+	}
+	
+	public void removeZeros() {
+		Set<RoleCombination> willRemove = new HashSet<>();
+		for(RoleCombination rc: probs.keySet())
+			if(probs.get(rc) < EPS)
+				willRemove.add(rc);
+		
+		for(RoleCombination rc: willRemove)
+			probs.remove(rc);
 	}
 
 	public boolean isUpdated() {
