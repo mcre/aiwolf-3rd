@@ -240,13 +240,13 @@ public class Estimate extends AbstractEstimate{
 			divinedHistory.add(new AgentTargetResult(talk.getAgent(), content.getTarget(), content.getResult()));
 			for(RoleCombination rc: probs.getRoleCombinations()){
 				//狂人が人狼に黒出し
-				if(rc.isPossessed(talk.getAgent()) && rc.isWerewolf(content.getTarget()))
+				if(rc.isPossessed(talk.getAgent()) && rc.isWerewolf(content.getTarget()) && content.getResult() == Species.WEREWOLF)
 					probs.update(rc, rates.get("BLACK_DIVINED_POSSESSED_TO_WEREWOLF"));
 				//人狼が狂人に黒出し
-				else if(rc.isWerewolf(talk.getAgent()) && rc.isPossessed(content.getTarget()))
+				else if(rc.isWerewolf(talk.getAgent()) && rc.isPossessed(content.getTarget()) && content.getResult() == Species.WEREWOLF)
 					probs.update(rc, rates.get("BLACK_DIVINED_WEREWOLF_TO_POSSESSED"));
 				//人狼が人狼に黒出し
-				else if(rc.isWerewolf(talk.getAgent()) && rc.isWerewolf(content.getTarget()))
+				else if(rc.isWerewolf(talk.getAgent()) && rc.isWerewolf(content.getTarget()) && content.getResult() == Species.WEREWOLF)
 					probs.update(rc, rates.get("BLACK_DIVINED_WEREWOLF_TO_WEREWOLF"));	
 				//村人陣営が嘘の占い
 				else if(rc.isVillagerTeam(talk.getAgent())){
