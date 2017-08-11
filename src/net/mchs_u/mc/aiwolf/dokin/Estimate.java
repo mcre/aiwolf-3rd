@@ -23,6 +23,11 @@ import net.mchs_u.mc.aiwolf.common.Probabilities;
 import net.mchs_u.mc.aiwolf.common.RoleCombination;
 
 public class Estimate extends AbstractEstimate{
+	
+	/***********************************************
+	 * 初期設定
+	 */
+	
 	private Map<String,Double> rates = null;
 	
 	private List<Agent> agents = null;
@@ -78,149 +83,9 @@ public class Estimate extends AbstractEstimate{
 		probs = new Probabilities(agents, gameSetting);
 	}
 	
-	public Map<Agent, Double> getWerewolfLikeness() {
-		if(probs.isUpdated())
-			calcLikenessAndProbability();
-		return werewolfLikeness;
-	}
-
-	public Map<Agent, Double> getVillagerTeamLikeness() {
-		if(probs.isUpdated())
-			calcLikenessAndProbability();
-		return villagerTeamLikeness;
-	}
-	
-	public Map<Integer, Double> getAliveWerewolvesNumberProbability() {
-		if(probs.isUpdated())
-			calcLikenessAndProbability();
-		return aliveWerewolvesNumberProbability;
-	}
-
-	public Map<Integer, Double> getAliveVillagerTeamNumberProbability() {
-		if(probs.isUpdated())
-			calcLikenessAndProbability();
-		return aliveVillagerTeamNumberProbability;
-	}
-	
-	public Map<Integer, Double> getAlivePossessedsNumberProbability() {
-		if(probs.isUpdated())
-			calcLikenessAndProbability();
-		return alivePossessedsNumberProbability;
-	}
-	
-	private Integer getConvincedNumber(Map<Integer, Double> probability) {
-		if(probability == null)
-			return 0;
-		
-		Integer ret = null;
-		for(int x: probability.keySet()) {
-			if(probability.get(x) > rates.get("NUMBER_PROBABILITY_OF_CONVICTION"))
-				ret = x;
-		}
-		return ret;
-	}
-	
-	public Integer getConvincedAliveWerewolvesNumber() { // 確信した人狼数
-		return getConvincedNumber(aliveWerewolvesNumberProbability);
-	}
-	
-	public Integer getConvincedAlivePossessedsNumber() { // 確信した狂人数
-		return getConvincedNumber(alivePossessedsNumberProbability);
-	}
-	
-	public Integer getConvincedAliveVillagerTeamNumber() { // 確信した村人チーム数
-		return getConvincedNumber(aliveVillagerTeamNumberProbability);
-	}
-	
-	public Agent getLastVoteRequestTargetByWerewolves() {
-		int maxTalk = -1;
-		Agent target = null;
-		for(Agent a: aliveAgents) {
-			if(getWerewolfLikeness().get(a) > rates.get("WEREWOLF_LIKENESS_OF_CONVICTION")) {
-				if(todaysVoteRequestMap.containsKey(a)){
-					int x   = todaysVoteRequestMap.get(a).getKey();
-					Agent t = todaysVoteRequestMap.get(a).getValue();
-					if(x > maxTalk) {
-						maxTalk = x;
-						target = t;
-					}
-				}
-			}
-		}
-		return target;
-	}
-		
-	//らしさと人数の確率を再計算
-	private void calcLikenessAndProbability(){
-		probs.removeZeros();
-		probs.resetUpdated();
-		calcLikeness();
-		calcProbability();
-	}
-	
-	private void calcLikeness(){
-		werewolfLikeness = new HashMap<>();
-		villagerTeamLikeness = new HashMap<>();
-		for(Agent a: agents){
-			werewolfLikeness.put(a, 0d);
-			villagerTeamLikeness.put(a, 0d);
-		}
-		
-		double sum = 0;
-		for(RoleCombination rc: probs.getRoleCombinations()){
-			double d = probs.getProbability(rc);
-			sum += d;
-			for(Agent a: agents){
-				if(rc.isWerewolf(a)){
-					werewolfLikeness.put(a, werewolfLikeness.get(a) + d);
-				}else if(!rc.isPossessed(a)){
-					villagerTeamLikeness.put(a, villagerTeamLikeness.get(a) + d);
-				}
-			}
-		}
-		
-		for(Agent a: agents){
-			werewolfLikeness.put(a, werewolfLikeness.get(a) / sum);
-			villagerTeamLikeness.put(a, villagerTeamLikeness.get(a) / sum);
-		}
-	}
-	
-	private void calcProbability(){
-		aliveWerewolvesNumberProbability = new HashMap<>();
-		aliveVillagerTeamNumberProbability = new HashMap<>();
-		alivePossessedsNumberProbability = new HashMap<>();
-		
-		if(aliveAgents == null)
-			return;
-		
-		int n = aliveAgents.size();
-		for(int i = 0; i <= n; i++) {
-			aliveWerewolvesNumberProbability.put((i), 0d);
-			aliveVillagerTeamNumberProbability.put((i), 0d);
-			alivePossessedsNumberProbability.put((i), 0d);
-		}
-
-		double sum = 0;
-		for(RoleCombination rc: probs.getRoleCombinations()){
-			double d = probs.getProbability(rc);
-			sum += d;
-			
-			int w = rc.countWerewolves(aliveAgents);
-			aliveWerewolvesNumberProbability.put(w, aliveWerewolvesNumberProbability.get(w) + d);
-			
-			int p = rc.countPossesseds(aliveAgents);
-			alivePossessedsNumberProbability.put(p, alivePossessedsNumberProbability.get(p) + d);
-			
-			int v = rc.countVillagerTeam(aliveAgents);
-			aliveVillagerTeamNumberProbability.put(v, aliveVillagerTeamNumberProbability.get(v) + d);
-		}
-		
-		for(int i = 0; i <= n; i++){
-			aliveWerewolvesNumberProbability.put(i , aliveWerewolvesNumberProbability.get(i) / sum);
-			alivePossessedsNumberProbability.put(i, alivePossessedsNumberProbability.get(i) / sum);
-			aliveVillagerTeamNumberProbability.put(i, aliveVillagerTeamNumberProbability.get(i) / sum);
-		}		
-	}
+	/***********************************************
+	 * 状況のアップデート(public)
+	 */
 	
 	public void dayStart(GameInfo gameInfo){
 		todaysVotePlanMap = new HashMap<>();
@@ -228,19 +93,6 @@ public class Estimate extends AbstractEstimate{
 		updateAliveAgentList(gameInfo.getAliveAgentList());
 		updateDeadAgentList(gameInfo.getLastDeadAgentList());
 		updateVoteList(gameInfo.getVoteList());
-	}
-	
-	//終了条件を満たしているパターン(狼が全滅してるのにゲームが終わってないなど)を削除
-	private void updateAliveAgentList(List<Agent> agents){
-		aliveAgents = agents;
-
-		for(RoleCombination rc: probs.getRoleCombinations()){
-			int countWerewolf = rc.countWerewolves(aliveAgents);
-			if(countWerewolf == 0)
-				probs.update(rc, rates.get("NO_WEREWOLVES")); // 狼が全滅
-			else if(countWerewolf >= aliveAgents.size() - countWerewolf)
-				probs.update(rc, rates.get("WEREWOLVES_ARE_MORE_THAN_HUMANS")); // 狼が人間と同数以上
-		}
 	}
 	
 	//確定した役職（自分の役職、仲間の狼など）以外の確率をゼロにする
@@ -297,28 +149,6 @@ public class Estimate extends AbstractEstimate{
 		}
 	}
 	
-	private void updateVoteList(List<Vote> voteList){
-		for(Vote v: voteList){
-			for(RoleCombination rc: probs.getRoleCombinations()){
-				// 狂人から人狼への投票
-				if(rc.isPossessed(v.getAgent()) && rc.isWerewolf(v.getTarget()))
-					probs.update(rc, rates.get("VOTE_POSSESSED_TO_WEREWOLF"));
-				// 人狼から狂人への投票
-				else if(rc.isWerewolf(v.getAgent()) && rc.isPossessed(v.getTarget()))
-					probs.update(rc, rates.get("VOTE_WEREWOLF_TO_POSSESSED"));
-				// 人狼から人狼への投票
-				else if(rc.isWerewolf(v.getAgent()) && rc.isWerewolf(v.getTarget()))
-					probs.update(rc, rates.get("VOTE_WEREWOLF_TO_WEREWOLF"));
-			}
-		}
-	}	
-	
-	private void updateDeadAgentList(List<Agent> agents){		
-		for(RoleCombination rc: probs.getRoleCombinations())
-			for(Agent agent: agents)
-				if(rc.isWerewolf(agent))
-					probs.update(rc, rates.get("ATTACKED_WEREWOLF")); // 人狼が襲撃される
-	}
 	
 	public void updateTalk(Talk talk){
 		Content content = new Content(talk.getText());
@@ -426,10 +256,169 @@ public class Estimate extends AbstractEstimate{
 			break;
 		default:
 			break;
-		}
-			
+		}		
 	}
 	
+	/***********************************************
+	 * 状況のアップデート(private)
+	 */
+	
+	//終了条件を満たしているパターン(狼が全滅してるのにゲームが終わってないなど)を削除
+	private void updateAliveAgentList(List<Agent> agents){
+		aliveAgents = agents;
+
+		for(RoleCombination rc: probs.getRoleCombinations()){
+			int countWerewolf = rc.countWerewolves(aliveAgents);
+			if(countWerewolf == 0)
+				probs.update(rc, rates.get("NO_WEREWOLVES")); // 狼が全滅
+			else if(countWerewolf >= aliveAgents.size() - countWerewolf)
+				probs.update(rc, rates.get("WEREWOLVES_ARE_MORE_THAN_HUMANS")); // 狼が人間と同数以上
+		}
+	}
+	
+	private void updateVoteList(List<Vote> voteList){
+		for(Vote v: voteList){
+			for(RoleCombination rc: probs.getRoleCombinations()){
+				// 狂人から人狼への投票
+				if(rc.isPossessed(v.getAgent()) && rc.isWerewolf(v.getTarget()))
+					probs.update(rc, rates.get("VOTE_POSSESSED_TO_WEREWOLF"));
+				// 人狼から狂人への投票
+				else if(rc.isWerewolf(v.getAgent()) && rc.isPossessed(v.getTarget()))
+					probs.update(rc, rates.get("VOTE_WEREWOLF_TO_POSSESSED"));
+				// 人狼から人狼への投票
+				else if(rc.isWerewolf(v.getAgent()) && rc.isWerewolf(v.getTarget()))
+					probs.update(rc, rates.get("VOTE_WEREWOLF_TO_WEREWOLF"));
+			}
+		}
+	}	
+	
+	private void updateDeadAgentList(List<Agent> agents){		
+		for(RoleCombination rc: probs.getRoleCombinations())
+			for(Agent agent: agents)
+				if(rc.isWerewolf(agent))
+					probs.update(rc, rates.get("ATTACKED_WEREWOLF")); // 人狼が襲撃される
+	}
+	
+	/***********************************************
+	 * 再計算
+	 */
+	
+	//らしさと人数の確率を再計算
+	private void calcLikenessAndProbability(){
+		probs.removeZeros();
+		probs.resetUpdated();
+		calcLikeness();
+		calcProbability();
+	}
+	
+	private void calcLikeness(){
+		werewolfLikeness = new HashMap<>();
+		villagerTeamLikeness = new HashMap<>();
+		for(Agent a: agents){
+			werewolfLikeness.put(a, 0d);
+			villagerTeamLikeness.put(a, 0d);
+		}
+		
+		double sum = 0;
+		for(RoleCombination rc: probs.getRoleCombinations()){
+			double d = probs.getProbability(rc);
+			sum += d;
+			for(Agent a: agents){
+				if(rc.isWerewolf(a)){
+					werewolfLikeness.put(a, werewolfLikeness.get(a) + d);
+				}else if(!rc.isPossessed(a)){
+					villagerTeamLikeness.put(a, villagerTeamLikeness.get(a) + d);
+				}
+			}
+		}
+		
+		for(Agent a: agents){
+			werewolfLikeness.put(a, werewolfLikeness.get(a) / sum);
+			villagerTeamLikeness.put(a, villagerTeamLikeness.get(a) / sum);
+		}
+	}
+	
+	private void calcProbability(){
+		aliveWerewolvesNumberProbability = new HashMap<>();
+		aliveVillagerTeamNumberProbability = new HashMap<>();
+		alivePossessedsNumberProbability = new HashMap<>();
+		
+		if(aliveAgents == null)
+			return;
+		
+		int n = aliveAgents.size();
+		for(int i = 0; i <= n; i++) {
+			aliveWerewolvesNumberProbability.put((i), 0d);
+			aliveVillagerTeamNumberProbability.put((i), 0d);
+			alivePossessedsNumberProbability.put((i), 0d);
+		}
+
+		double sum = 0;
+		for(RoleCombination rc: probs.getRoleCombinations()){
+			double d = probs.getProbability(rc);
+			sum += d;
+			
+			int w = rc.countWerewolves(aliveAgents);
+			aliveWerewolvesNumberProbability.put(w, aliveWerewolvesNumberProbability.get(w) + d);
+			
+			int p = rc.countPossesseds(aliveAgents);
+			alivePossessedsNumberProbability.put(p, alivePossessedsNumberProbability.get(p) + d);
+			
+			int v = rc.countVillagerTeam(aliveAgents);
+			aliveVillagerTeamNumberProbability.put(v, aliveVillagerTeamNumberProbability.get(v) + d);
+		}
+		
+		for(int i = 0; i <= n; i++){
+			aliveWerewolvesNumberProbability.put(i , aliveWerewolvesNumberProbability.get(i) / sum);
+			alivePossessedsNumberProbability.put(i, alivePossessedsNumberProbability.get(i) / sum);
+			aliveVillagerTeamNumberProbability.put(i, aliveVillagerTeamNumberProbability.get(i) / sum);
+		}		
+	}
+	
+	/***********************************************
+	 * 情報を返す(らしさ・確信人数)
+	 */
+	
+	// エージェントごとの人狼らしさ
+	public Map<Agent, Double> getWerewolfLikeness() {
+		if(probs.isUpdated())
+			calcLikenessAndProbability();
+		return werewolfLikeness;
+	}
+
+	// エージェントごとの村人側らしさ
+	public Map<Agent, Double> getVillagerTeamLikeness() {
+		if(probs.isUpdated())
+			calcLikenessAndProbability();
+		return villagerTeamLikeness;
+	}
+	
+	// 最低でもこれだけ生きていると確信できる人狼数
+	public Integer getConvincedAliveWerewolvesNumber() {
+		if(probs.isUpdated())
+			calcLikenessAndProbability();
+		return getConvincedNumber(aliveWerewolvesNumberProbability);
+	}
+	
+	// 最低でもこれだけ生きていると確信できる狂人数
+	public Integer getConvincedAlivePossessedsNumber() {
+		if(probs.isUpdated())
+			calcLikenessAndProbability();
+		return getConvincedNumber(alivePossessedsNumberProbability);
+	}
+	
+	// 最低でもこれだけ生きていると確信できる村人側数
+	public Integer getConvincedAliveVillagerTeamNumber() {
+		if(probs.isUpdated())
+			calcLikenessAndProbability();
+		return getConvincedNumber(aliveVillagerTeamNumberProbability);
+	}
+	
+	/***********************************************
+	 * 情報を返す(PP用)
+	 */
+	
+	// PPできる状況か？(人狼 + 狂人 > 村人側 と確信できるか？)
 	public boolean isPowerPlayPossible() {		
 		Integer w = getConvincedAliveWerewolvesNumber();
 		Integer p = getConvincedAlivePossessedsNumber();
@@ -442,10 +431,35 @@ public class Estimate extends AbstractEstimate{
 		return false;
 	}
 	
+	// PP突入してる？(人狼か狂人がCOした？)
 	public boolean isPowerPlay() {
 		return (getCoSet(Role.WEREWOLF).size() + getCoSet(Role.POSSESSED).size()) > 0;
 	}
 	
+	// 人狼だと確信できる人が直近で投票してと言っているエージェント
+	public Agent getLastVoteRequestTargetByWerewolves() {
+		int maxTalk = -1;
+		Agent target = null;
+		for(Agent a: aliveAgents) {
+			if(getWerewolfLikeness().get(a) > rates.get("WEREWOLF_LIKENESS_OF_CONVICTION")) {
+				if(todaysVoteRequestMap.containsKey(a)){
+					int x   = todaysVoteRequestMap.get(a).getKey();
+					Agent t = todaysVoteRequestMap.get(a).getValue();
+					if(x > maxTalk) {
+						maxTalk = x;
+						target = t;
+					}
+				}
+			}
+		}
+		return target;
+	}
+	
+	/***********************************************
+	 * 情報を返す(他)
+	 */
+	
+	// 各エージェントの直近CO役職
 	public Set<Agent> getCoSet(Role role){
 		Set<Agent> ret = new HashSet<>();
 		for(Agent a: coMap.keySet()) {
@@ -455,17 +469,7 @@ public class Estimate extends AbstractEstimate{
 		return ret;
 	}	
 	
-	public void print(){
-		Map<Agent, Double> w = getWerewolfLikeness();
-		Map<Agent, Double> v = getVillagerTeamLikeness();
-		for(Agent a: agents){
-			System.out.print("[" + a.getAgentIdx() + "]\t");
-			System.out.printf("%.4f\t",w.get(a));
-			System.out.printf("%.4f\t",v.get(a));
-			System.out.printf("%.4f\n",1d - v.get(a) - w.get(a));
-		}
-	}
-	
+	// 今日一番投票宣言のターゲットが多いエージェントのリスト(同数の場合があるのでリスト)
 	public List<Agent> getMostVotePlanedAgents(){
 		List<Agent> ret = new ArrayList<>();
 		Map<Agent, Integer> count = new HashMap<>();
@@ -489,6 +493,31 @@ public class Estimate extends AbstractEstimate{
 		}
 		return ret;
 	}
-
 	
+	/***********************************************
+	 * 他
+	 */
+
+	public void print(){
+		Map<Agent, Double> w = getWerewolfLikeness();
+		Map<Agent, Double> v = getVillagerTeamLikeness();
+		for(Agent a: agents){
+			System.out.print("[" + a.getAgentIdx() + "]\t");
+			System.out.printf("%.4f\t",w.get(a));
+			System.out.printf("%.4f\t",v.get(a));
+			System.out.printf("%.4f\n",1d - v.get(a) - w.get(a));
+		}
+	}
+	
+	private Integer getConvincedNumber(Map<Integer, Double> probability) {
+		if(probability == null)
+			return 0;
+		
+		Integer ret = null;
+		for(int x: probability.keySet()) {
+			if(probability.get(x) > rates.get("NUMBER_PROBABILITY_OF_CONVICTION"))
+				ret = x;
+		}
+		return ret;
+	}
 }
