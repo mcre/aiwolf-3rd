@@ -45,28 +45,33 @@ public class Estimate extends AbstractEstimate{
 		
 		rates = new HashMap<>();
 
-		rates.put("VOTE_POSSESSED_TO_WEREWOLF"         , 0.900d);
-		rates.put("VOTE_WEREWOLF_TO_POSSESSED"         , 0.900d);
-		rates.put("VOTE_WEREWOLF_TO_WEREWOLF"          , 0.900d);
+		rates.put("VOTE_POSSESSED_TO_WEREWOLF"          , 0.900d);
+		rates.put("VOTE_WEREWOLF_TO_POSSESSED"          , 0.900d);
+		rates.put("VOTE_WEREWOLF_TO_WEREWOLF"           , 0.900d);
 		rates.put("FALSE_IDENTIFIED_FROM_VILLAGER_TEAM" , 0.010d);
-		rates.put("FALSE_DIVINED_FROM_VILLAGER_TEAM"   , 0.010d);
-		rates.put("BLACK_DIVINED_POSSESSED_TO_WEREWOLF", 0.900d);
-		rates.put("BLACK_DIVINED_WEREWOLF_TO_POSSESSED", 0.500d);
-		rates.put("BLACK_DIVINED_WEREWOLF_TO_WEREWOLF" , 0.100d);
-		rates.put("2_SEER_CO_FROM_VILLGER_TEAM"        , 0.001d);
-		rates.put("2_MEDIUM_CO_FROM_VILLAGER_TEAM"     , 0.001d);
-		rates.put("2_BODYGUARD_CO_FROM_VILLAGER_TEAM"  , 0.001d);
-		rates.put("ONLY_SEER_CO_FROM_WEREWOLF_TEAM"    , 0.010d);
-		rates.put("ONLY_MEDIUM_CO_FROM_WEREWOLF_TEAM"  , 0.010d);
-		rates.put("TEAM_MEMBER_WOLF"                   , 0.500d);
+		rates.put("FALSE_DIVINED_FROM_VILLAGER_TEAM"    , 0.010d);
+		rates.put("BLACK_DIVINED_POSSESSED_TO_WEREWOLF" , 0.900d);
+		rates.put("BLACK_DIVINED_WEREWOLF_TO_POSSESSED" , 0.500d);
+		rates.put("BLACK_DIVINED_WEREWOLF_TO_WEREWOLF"  , 0.100d);
+		rates.put("2_SEER_CO_FROM_VILLGER_TEAM"         , 0.001d);
+		rates.put("2_MEDIUM_CO_FROM_VILLAGER_TEAM"      , 0.001d);
+		rates.put("2_BODYGUARD_CO_FROM_VILLAGER_TEAM"   , 0.001d);
+		rates.put("ONLY_SEER_CO_FROM_WEREWOLF_TEAM"     , 0.010d);
+		rates.put("ONLY_MEDIUM_CO_FROM_WEREWOLF_TEAM"   , 0.010d);
+		
+		rates.put("NO_WEREWOLVES"                       , 0.000d);
+		rates.put("WEREWOLVES_ARE_MORE_THAN_HUMANS"     , 0.000d);
+		rates.put("INCONSISTENT_WITH_MY_ABILITY_RESULT" , 0.000d);
+		rates.put("INCONSISTENT_WITH_ROLE_I_KNOW"       , 0.000d);
+		rates.put("ATTACKED_WEREWOLF"                   , 0.000d);
+		
+		rates.put("TEAM_MEMBER_WOLF"                    , 0.500d);
 		
 		rates.put("GUARDED_WEREWOLF_WHEN_ATTACK_FAILURE", 0.100d);
 		rates.put("POSSESSED_CO_FROM_OUTSIDE_POSSESSED" , 0.010d);
 		rates.put("WEREWOLF_CO_FROM_OUTSIDE_WEREWOLF"   , 0.010d);
 		rates.put("NUMBER_PROBABILITY_OF_CONVICTION"    , 0.800d); // 確率がいくら以上だったらその人数が残っていることを確信するか（0.5以下に設定してはいけない）
 		rates.put("WEREWOLF_LIKENESS_OF_CONVICTION"     , 0.800d); // らしさがいくら以上だったらその人が人狼であることを確信するか
-		
-		
 		
 		coMap = new HashMap<>();
 
@@ -227,54 +232,43 @@ public class Estimate extends AbstractEstimate{
 	//終了条件を満たしているパターン(狼が全滅してるのにゲームが終わってないなど)を削除
 	private void updateAliveAgentList(List<Agent> agents){
 		aliveAgents = agents;
-		
-		Set<RoleCombination> reserveRemove = new HashSet<>();
+
 		for(RoleCombination rc: probs.getRoleCombinations()){
 			int countWerewolf = rc.countWerewolves(aliveAgents);
-			//狼が全滅
 			if(countWerewolf == 0)
-				reserveRemove.add(rc);
-			//狼が人間と同数以上
+				probs.update(rc, rates.get("NO_WEREWOLVES")); // 狼が全滅
 			else if(countWerewolf >= aliveAgents.size() - countWerewolf)
-				reserveRemove.add(rc);
+				probs.update(rc, rates.get("WEREWOLVES_ARE_MORE_THAN_HUMANS")); // 狼が人間と同数以上
 		}
-		for(RoleCombination rr:reserveRemove)
-			probs.remove(rr);
 	}
 	
 	//確定した役職（自分の役職、仲間の狼など）以外の確率をゼロにする
 	public void updateDefinedRole(Agent agent, Role role){
-		Set<RoleCombination> reserveRemove = new HashSet<>();
 		for(RoleCombination rc: probs.getRoleCombinations()){
 			if(role == Role.POSSESSED){
 				if(!rc.isPossessed(agent))
-					reserveRemove.add(rc);
+					probs.update(rc, rates.get("INCONSISTENT_WITH_ROLE_I_KNOW"));
 			} else if(role == Role.WEREWOLF) {
 				if(!rc.isWerewolf(agent))
-					reserveRemove.add(rc);
+					probs.update(rc, rates.get("INCONSISTENT_WITH_ROLE_I_KNOW"));
 			} else {
 				if(!rc.isVillagerTeam(agent))
-					reserveRemove.add(rc);
+					probs.update(rc, rates.get("INCONSISTENT_WITH_ROLE_I_KNOW"));
 			}
 		}
-		for(RoleCombination rr:reserveRemove)
-			probs.remove(rr);
 	}
 	
 	//確定した人種（自分目線の占い結果など）以外の確率をゼロにする
 	public void updateDefinedSpecies(Agent agent, Species species){
-		Set<RoleCombination> reserveRemove = new HashSet<>();
 		for(RoleCombination rc: probs.getRoleCombinations()){
 			if(species == Species.WEREWOLF){
 				if(!rc.isWerewolf(agent))
-					reserveRemove.add(rc);
+					probs.update(rc, rates.get("INCONSISTENT_WITH_MY_ABILITY_RESULT"));
 			} else {
 				if(rc.isWerewolf(agent))
-					reserveRemove.add(rc);
+					probs.update(rc, rates.get("INCONSISTENT_WITH_MY_ABILITY_RESULT"));
 			}
 		}
-		for(RoleCombination rr:reserveRemove)
-			probs.remove(rr);
 	}
 	
 	//仲間の狼の確率を下げる（身内切りのためゼロにはしない）（村人目線のときにつかう）
@@ -318,20 +312,11 @@ public class Estimate extends AbstractEstimate{
 		}
 	}	
 	
-	private void updateDeadAgentList(List<Agent> agents){
-		Set<RoleCombination> reserveRemove = new HashSet<>();
-		
-		for(RoleCombination rc: probs.getRoleCombinations()){
-			for(Agent agent: agents) {
-				//人狼が襲撃される
-				if(rc.isWerewolf(agent)){
-					reserveRemove.add(rc);
-				}
-			}
-		}
-		
-		for(RoleCombination rr:reserveRemove)
-			probs.remove(rr);
+	private void updateDeadAgentList(List<Agent> agents){		
+		for(RoleCombination rc: probs.getRoleCombinations())
+			for(Agent agent: agents)
+				if(rc.isWerewolf(agent))
+					probs.update(rc, rates.get("ATTACKED_WEREWOLF")); // 人狼が襲撃される
 	}
 	
 	public void updateTalk(Talk talk){
