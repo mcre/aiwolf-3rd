@@ -13,15 +13,15 @@ public class Main {
 		int set = 600;
 		int times = 100;
 		int playerNum = 15;
-		boolean isVisualize = true;
+		boolean isVisualize = false;
 		boolean isLog = false;
 		boolean isSaveResult = true;
 		Role role = null;
 		
 		List<PlayerDefinition> playerDefinitions = new ArrayList<>();
-		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.baikin04.McrePlayer.class, false, null, "baikin"));
 		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.curry.McrePlayer.class, false, null, "curry"));
-		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.dokin.McrePlayer.class, isVisualize, role, "dokin"));
+		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.dokin.McrePlayer.class, false, null, "dokin"));
+		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.eclair.McrePlayer.class, isVisualize, role, "eclair"));
 
 		int count = 0;
 		while(playerDefinitions.size() < playerNum){
