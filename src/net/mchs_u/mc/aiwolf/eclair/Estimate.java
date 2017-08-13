@@ -194,10 +194,13 @@ public class Estimate extends AbstractEstimate{
 	private void calcProbabilities() {
 		probs = initProbs.clone();
 		for(RoleCombination rc: probs.getRoleCombinations())
+			calcProbabilityRemove(rc);
+		probs.removeZeros();
+		for(RoleCombination rc: probs.getRoleCombinations())
 			calcProbability(rc);
 	}
-
-	private void calcProbability(RoleCombination rc) {
+	
+	private void calcProbabilityRemove(RoleCombination rc){ // 削除系は先にやって多少高速化
 		// 確定した役職（自分の役職、仲間の狼など）以外の確率をゼロにする
 		for(Agent agent: definedRoleMap.keySet()) {
 			Role role = definedRoleMap.get(agent);
@@ -219,6 +222,9 @@ public class Estimate extends AbstractEstimate{
 			probs.update(rc, rates.get("NO_WEREWOLVES")); // 狼が全滅
 		else if(countWerewolf >= aliveAgents.size() - countWerewolf)
 			probs.update(rc, rates.get("WEREWOLVES_ARE_MORE_THAN_HUMANS")); // 狼が人間と同数以上
+	}
+
+	private void calcProbability(RoleCombination rc) {
 
 		// 投票履歴
 		for(Vote v: voteHistory){
