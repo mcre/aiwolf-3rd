@@ -183,12 +183,12 @@ public class Estimate extends AbstractEstimate{
 
 	//再計算
 	private void calc(){
-		//probs.removeZeros();
-		//probs.resetUpdated();
 		calcProbabilities();
 
 		calcLikeness();
 		calcNumberProbabilities();
+		
+		probs.resetUpdated();
 	}
 
 	private void calcProbabilities() {
