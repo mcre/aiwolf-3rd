@@ -31,9 +31,9 @@ public class Estimate extends AbstractEstimate{
 
 	private Map<String,Double> rates = null;
 	private Probabilities probs = null;
+	private Probabilities initProbs = null;
 
 	private List<Agent> agents = null;
-	private GameSetting gameSetting = null;
 
 	private List<Agent> aliveAgents = null;
 	private Map<Agent, Role> coMap = null;
@@ -88,8 +88,6 @@ public class Estimate extends AbstractEstimate{
 		rates.put("NUMBER_PROBABILITY_OF_CONVICTION"    , 0.800d); // 確率がいくら以上だったらその人数が残っていることを確信するか（0.5以下に設定してはいけない）
 		rates.put("WEREWOLF_LIKENESS_OF_CONVICTION"     , 0.800d); // らしさがいくら以上だったらその人が人狼であることを確信するか
 
-		this.gameSetting = gameSetting;
-
 		coMap = new HashMap<>();
 		definedRoleMap = new HashMap<>();
 		definedSpeciesMap = new HashMap<>();
@@ -99,6 +97,9 @@ public class Estimate extends AbstractEstimate{
 		guardedAgentsWhenAttackFailure = new ArrayList<>();
 		attackedAgents = new ArrayList<>();
 		voteHistory = new ArrayList<>();
+		
+		probs = new Probabilities(agents, gameSetting);
+		initProbs = probs.clone();
 	}
 
 	/***********************************************
@@ -113,22 +114,22 @@ public class Estimate extends AbstractEstimate{
 		voteHistory.addAll(gameInfo.getVoteList());
 		attackedAgents.addAll(gameInfo.getLastDeadAgentList());
 
-		update();
+		probs.update();
 	}
 
 	public void updateDefinedRole(Agent agent, Role role){
 		definedRoleMap.put(agent, role);
-		update();
+		probs.update();
 	}
 
 	public void updateDefinedSpecies(Agent agent, Species species){
 		definedSpeciesMap.put(agent, species);
-		update();
+		probs.update();
 	}
 
 	public void updateTeamMemberWolf(List<Agent> agents){
 		teamMemberWolves.addAll(agents);
-		update();
+		probs.update();
 	}
 
 	public void updateGuardedResult(Agent guardedAgent, int deadAgentsCount) {
@@ -137,7 +138,7 @@ public class Estimate extends AbstractEstimate{
 		if(deadAgentsCount > 0)
 			return;
 		guardedAgentsWhenAttackFailure.add(guardedAgent);
-		update();
+		probs.update();
 	}
 
 	public void updateTalk(Talk talk){
@@ -150,25 +151,25 @@ public class Estimate extends AbstractEstimate{
 			if(coMap.get(content.getTarget()) == content.getRole()) // 同じ内容の2度目以降のCOは無視
 				break;
 			coMap.put(content.getTarget(), content.getRole());
-			update();
+			probs.update();
 			break;
 		case DIVINED:
 			divinedHistory.add(new AgentTargetResult(talk.getAgent(), content.getTarget(), content.getResult()));
-			update();
+			probs.update();
 			break;
 		case IDENTIFIED:
 			identifiedHistory.add(new AgentTargetResult(talk.getAgent(), content.getTarget(), content.getResult()));
-			update();
+			probs.update();
 			break;
 		case VOTE:
 			todaysVotePlanMap.put(talk.getAgent(), content.getTarget());
-			update();
+			probs.update();
 			break;
 		case OPERATOR:
 			Content c = content.getContentList().get(0);
 			if(c.getTopic() == Topic.VOTE) {
 				todaysVoteRequestMap.put(talk.getAgent(), new Pair<Integer, Agent>(talk.getIdx(), c.getTarget()));
-				update();
+				probs.update();
 			}
 			break;
 		default:
@@ -191,7 +192,7 @@ public class Estimate extends AbstractEstimate{
 	}
 
 	private void calcProbabilities() {
-		probs = new Probabilities(agents, gameSetting);
+		probs = initProbs.clone();
 		for(RoleCombination rc: probs.getRoleCombinations())
 			calcProbability(rc);
 	}
@@ -409,35 +410,35 @@ public class Estimate extends AbstractEstimate{
 
 	// エージェントごとの人狼らしさ
 	public Map<Agent, Double> getWerewolfLikeness() {
-		if(isUpdated())
+		if(probs.isUpdated())
 			calc();
 		return werewolfLikeness;
 	}
 
 	// エージェントごとの村人側らしさ
 	public Map<Agent, Double> getVillagerTeamLikeness() {
-		if(isUpdated())
+		if(probs.isUpdated())
 			calc();
 		return villagerTeamLikeness;
 	}
 
 	// 最低でもこれだけ生きていると確信できる人狼数
 	public Integer getConvincedAliveWerewolvesNumber() {
-		if(isUpdated())
+		if(probs.isUpdated())
 			calc();
 		return getConvincedNumber(aliveWerewolvesNumberProbability);
 	}
 
 	// 最低でもこれだけ生きていると確信できる狂人数
 	public Integer getConvincedAlivePossessedsNumber() {
-		if(isUpdated())
+		if(probs.isUpdated())
 			calc();
 		return getConvincedNumber(alivePossessedsNumberProbability);
 	}
 
 	// 最低でもこれだけ生きていると確信できる村人側数
 	public Integer getConvincedAliveVillagerTeamNumber() {
-		if(isUpdated())
+		if(probs.isUpdated())
 			calc();
 		return getConvincedNumber(aliveVillagerTeamNumberProbability);
 	}
@@ -595,16 +596,5 @@ public class Estimate extends AbstractEstimate{
 				ret = x;
 		}
 		return ret;
-	}
-	
-	private void update() {
-		if(probs != null)
-			probs.update();
-	}
-	
-	private boolean isUpdated() {
-		if(probs == null)
-			return true;
-		return probs.isUpdated();
 	}
 }
