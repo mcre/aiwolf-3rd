@@ -32,11 +32,13 @@ public class Estimate extends AbstractEstimate{
 	private Map<String,Double> rates = null;
 	private Probabilities probs = null;
 	private Probabilities initProbs = null;
+	private CoProbability coProb = null;
 
 	private List<Agent> agents = null;
 
 	private List<Agent> aliveAgents = null;
 	private Map<Agent, Role> coMap = null;
+	private Map<Agent, Role> coMapForEstimate = null;
 	private Map<Agent, Role> definedRoleMap = null;
 	private Map<Agent, Species> definedSpeciesMap = null;
 	private Set<Agent> teamMemberWolves = null;
@@ -68,12 +70,8 @@ public class Estimate extends AbstractEstimate{
 		rates.put("BLACK_DIVINED_POSSESSED_TO_WEREWOLF" , 0.900d);
 		rates.put("BLACK_DIVINED_WEREWOLF_TO_POSSESSED" , 0.500d);
 		rates.put("BLACK_DIVINED_WEREWOLF_TO_WEREWOLF"  , 0.100d);
-		rates.put("2_SEER_CO_FROM_VILLGER_TEAM"         , 0.001d);
-		rates.put("2_MEDIUM_CO_FROM_VILLAGER_TEAM"      , 0.001d);
-		rates.put("2_BODYGUARD_CO_FROM_VILLAGER_TEAM"   , 0.001d);
-		rates.put("ONLY_SEER_CO_FROM_WEREWOLF_TEAM"     , 0.010d);
-		rates.put("ONLY_MEDIUM_CO_FROM_WEREWOLF_TEAM"   , 0.010d);
 		rates.put("GUARDED_WEREWOLF_WHEN_ATTACK_FAILURE", 0.100d);
+
 		rates.put("POSSESSED_CO_FROM_OUTSIDE_POSSESSED" , 0.010d);
 		rates.put("WEREWOLF_CO_FROM_OUTSIDE_WEREWOLF"   , 0.010d);
 
@@ -89,6 +87,7 @@ public class Estimate extends AbstractEstimate{
 		rates.put("WEREWOLF_LIKENESS_OF_CONVICTION"     , 0.800d); // らしさがいくら以上だったらその人が人狼であることを確信するか
 
 		coMap = new HashMap<>();
+		coMapForEstimate = new HashMap<>();
 		definedRoleMap = new HashMap<>();
 		definedSpeciesMap = new HashMap<>();
 		teamMemberWolves = new HashSet<>();
@@ -100,6 +99,8 @@ public class Estimate extends AbstractEstimate{
 		
 		probs = new Probabilities(agents, gameSetting);
 		initProbs = probs.clone();
+		
+		coProb = new CoProbability();
 	}
 
 	/***********************************************
@@ -148,8 +149,8 @@ public class Estimate extends AbstractEstimate{
 		case COMINGOUT:
 			if(!talk.getAgent().equals(content.getTarget())) // 自分自身のCOじゃない場合は無視
 				break;
-			if(coMap.get(content.getTarget()) == content.getRole()) // 同じ内容の2度目以降のCOは無視
-				break;
+			if(!coMap.containsKey(content.getTarget()) && (content.getRole() == Role.SEER || content.getRole() == Role.MEDIUM)) // 一回目のCOかつ占か霊能
+				coMapForEstimate.put(content.getTarget(), content.getRole());
 			coMap.put(content.getTarget(), content.getRole());
 			probs.update();
 			break;
@@ -192,7 +193,20 @@ public class Estimate extends AbstractEstimate{
 	}
 
 	private void calcProbabilities() {
+		if(aliveAgents == null) // まだdayStartしてない場合
+			return;
 		probs = initProbs.clone();
+		
+		Set<Agent> s = getCoSetForEstimate(Role.SEER);
+		Set<Agent> m = getCoSetForEstimate(Role.MEDIUM);
+		for(Agent agent: s)
+			coProb.calc(probs, agent, agents.size(), s.size(), m.size(), Role.SEER);
+		for(Agent agent: m)
+			coProb.calc(probs, agent, agents.size(), s.size(), m.size(), Role.MEDIUM);
+		System.out.println(s);
+		System.out.println(m);
+		System.out.println("hogehogehoge");
+		
 		for(RoleCombination rc: probs.getRoleCombinations())
 			calcProbabilityRemove(rc);
 		probs.removeZeros();
@@ -302,36 +316,9 @@ public class Estimate extends AbstractEstimate{
 			}
 		}
 
-		// CO
+		// PP用CO
 		for(Agent agent: coMap.keySet()) {
 			switch(coMap.get(agent)) {
-			case BODYGUARD:
-				if(rc.isVillagerTeam(agent))
-					if(rc.countVillagerTeam(getCoSet(Role.BODYGUARD)) == 2)
-						probs.update(rc, rates.get("2_BODYGUARD_CO_FROM_VILLAGER_TEAM")); // 村人陣営から二人目の狩人CO
-				break;
-			case SEER:
-				if(rc.isVillagerTeam(agent)){
-					if(rc.countVillagerTeam(getCoSet(Role.SEER)) == 2)
-						probs.update(rc, rates.get("2_SEER_CO_FROM_VILLGER_TEAM")); // 村人陣営から二人目の占いCO
-					if(rc.countWerewolfTeam(getCoSet(Role.SEER)) > 0 && rc.countVillagerTeam(getCoSet(Role.SEER)) == 1)
-						probs.restore(rc, rates.get("ONLY_SEER_CO_FROM_WEREWOLF_TEAM")); // 既に人狼陣営が占いCOしている状態での初めての村人陣営占いCO(①を解除)
-				} else {
-					if(rc.countVillagerTeam(getCoSet(Role.SEER)) < 1 && rc.countWerewolfTeam(getCoSet(Role.SEER)) == 1)
-						probs.update(rc, rates.get("ONLY_SEER_CO_FROM_WEREWOLF_TEAM")); // 村人陣営が占いCOしていない状態で初めての人狼陣営占いCO(①)
-				}
-				break;
-			case MEDIUM:
-				if(rc.isVillagerTeam(agent)) {
-					if(rc.countVillagerTeam(getCoSet(Role.MEDIUM)) == 2)
-						probs.update(rc, rates.get("2_MEDIUM_CO_FROM_VILLAGER_TEAM")); // 村人陣営から二人目の霊能CO
-					if(rc.countWerewolfTeam(getCoSet(Role.MEDIUM)) > 0 && rc.countVillagerTeam(getCoSet(Role.MEDIUM)) == 1)
-						probs.restore(rc, rates.get("ONLY_MEDIUM_CO_FROM_WEREWOLF_TEAM")); // 既に人狼陣営が霊能COしている状態での初めての村人陣営霊能CO(②を解除)
-				} else {
-					if(rc.countVillagerTeam(getCoSet(Role.MEDIUM)) < 1 && rc.countWerewolfTeam(getCoSet(Role.MEDIUM)) == 1)
-						probs.update(rc, rates.get("ONLY_MEDIUM_CO_FROM_WEREWOLF_TEAM")); // 村人陣営が霊能COしていない状態で初めての人狼陣営霊能CO(②)
-				}
-				break;
 			case WEREWOLF:
 				if(!rc.isWerewolf(agent))
 					probs.update(rc, rates.get("WEREWOLF_CO_FROM_OUTSIDE_WEREWOLF"));
@@ -497,6 +484,10 @@ public class Estimate extends AbstractEstimate{
 	public Map<Agent, Role> getCoMap() {
 		return coMap;
 	}
+	
+	public Map<Agent, Role> getCoMapForEstimate() {
+		return coMapForEstimate;
+	}
 
 	public Map<Agent, Role> getDefinedRoleMap() {
 		return definedRoleMap;
@@ -547,6 +538,16 @@ public class Estimate extends AbstractEstimate{
 		Set<Agent> ret = new HashSet<>();
 		for(Agent a: coMap.keySet()) {
 			if(coMap.get(a) == role)
+				ret.add(a);
+		}
+		return ret;
+	}
+	
+	// その役職にCOしている人のリスト(複数回COした場合1回目のみ, 占いと霊能のみ)
+	public Set<Agent> getCoSetForEstimate(Role role){
+		Set<Agent> ret = new HashSet<>();
+		for(Agent a: coMapForEstimate.keySet()) {
+			if(coMapForEstimate.get(a) == role)
 				ret.add(a);
 		}
 		return ret;

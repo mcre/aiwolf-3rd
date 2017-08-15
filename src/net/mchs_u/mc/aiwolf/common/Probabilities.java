@@ -77,6 +77,11 @@ public class Probabilities implements Cloneable {
 		return probs.keySet();
 	}
 
+	public void init(RoleCombination rc, double rate) {
+		probs.put(rc, rate);
+		updated = true;
+	}
+	
 	public void update(RoleCombination rc, double rate) {
 		probs.put(rc, probs.get(rc) * rate);
 		updated = true;
