@@ -13,7 +13,7 @@ public class Main {
 		int set = 600;
 		int times = 100;
 		int playerNum = 15;
-		boolean isVisualize = false;
+		boolean isVisualize = true;
 		boolean isLog = false;
 		boolean isSaveResult = true;
 		Role role = null;

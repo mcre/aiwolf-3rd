@@ -3,6 +3,7 @@ package net.mchs_u.mc.aiwolf.common.starter.component;
 import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 
@@ -107,6 +108,12 @@ public class DebugVisualizePlayer implements EstimatePlayer {
 		
 		estimateGraphs.get(1).refreshVillagerTeamLikeness(player.getObjectiveEstimate().getVillagerTeamLikeness());
 		estimateGraphs.get(1).refreshWerewolfLikeness(player.getObjectiveEstimate().getWerewolfLikeness());
+		Map<Agent, Double> v = player.getObjectiveEstimate().getVillagerTeamLikeness();
+		Map<Agent, Double> w = player.getObjectiveEstimate().getWerewolfLikeness();
+		for(Agent a: v.keySet()) {
+			System.out.println(a + ", " + (1 - v.get(a) - w.get(a)) + ", " + v.get(a) + ", " + w.get(a));
+		}
+		
 		
 		estimateGraphs.get(2).refreshVillagerTeamLikeness(player.getPretendVillagerEstimate().getVillagerTeamLikeness());
 		estimateGraphs.get(2).refreshWerewolfLikeness(player.getPretendVillagerEstimate().getWerewolfLikeness());

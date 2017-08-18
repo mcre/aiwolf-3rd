@@ -12,7 +12,7 @@ import org.aiwolf.common.data.Role;
 import org.aiwolf.common.net.GameSetting;
 
 public class Probabilities implements Cloneable {
-	private static final double EPS = 0.0001d;
+	private static final double EPS = 0.000000000000000000000001d;
 
 	private boolean updated = false;
 	private Map<RoleCombination, Double> probs = null;

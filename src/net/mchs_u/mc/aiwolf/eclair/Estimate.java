@@ -199,10 +199,8 @@ public class Estimate extends AbstractEstimate{
 		
 		Set<Agent> s = getCoSetForEstimate(Role.SEER);
 		Set<Agent> m = getCoSetForEstimate(Role.MEDIUM);
-		for(Agent agent: s)
-			coProb.calc(probs, agent, agents.size(), s.size(), m.size(), Role.SEER);
-		for(Agent agent: m)
-			coProb.calc(probs, agent, agents.size(), s.size(), m.size(), Role.MEDIUM);
+		for(Agent agent: agents)
+			coProb.calc(probs, agent, agents.size(), s.size(), m.size(), coMapForEstimate.get(agent));
 		System.out.println(s);
 		System.out.println(m);
 		System.out.println("hogehogehoge");
@@ -353,7 +351,6 @@ public class Estimate extends AbstractEstimate{
 				}
 			}
 		}
-
 		for(Agent a: agents){
 			werewolfLikeness.put(a, werewolfLikeness.get(a) / sum);
 			villagerTeamLikeness.put(a, villagerTeamLikeness.get(a) / sum);
