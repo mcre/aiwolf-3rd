@@ -12,6 +12,10 @@
 
 * net.mchs_u.mc.aiwolf.dokin.McrePlayer
   + 今回の出場エージェント
+  
+* net.mchs_u.mc.aiwolf.eclair.McrePlayer
+  + 作りかけで諦めたエージェント
+
 
 Mainクラスから参照している`bakin04`(第2回出場エージェント), `curry`(GAT2017出場エージェント)は[こちら](https://github.com/mcre/aiwolf-gat2017/blob/master/McrePlayer.jar)の中にあります。
 
@@ -21,8 +25,11 @@ Mainクラスから参照している`bakin04`(第2回出場エージェント),
 人狼知能プレ大会@GAT2017の提出エージェントについては[こちら](https://github.com/mcre/aiwolf-gat2017)をご覧ください。
 変更点は以下のとおりです。
 
-* その他
+* バグ修正
   + 予備予選でぬるぽ発生していた箇所を回避
+  + 「狂人が人狼に黒出し・人狼が狂人に黒出し・人狼が人狼に黒出し」での確率調整について、白出しでも同様な調整をするようになっていたバクを修正
+* 新規エージェントの作成
+  + ログからCO状態での確率調整を行おうとしたeclairは完成せず今回は諦めた
 
 ## 連絡先
 
