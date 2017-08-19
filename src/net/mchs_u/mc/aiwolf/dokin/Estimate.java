@@ -183,6 +183,7 @@ public class Estimate extends AbstractEstimate{
 			if(coMap.get(content.getTarget()) == content.getRole()) // 同じ内容の2度目以降のCOは無視
 				break;
 			
+			Set<Agent> beforeCoSeerSet = getCoSet(Role.SEER);
 			coMap.put(content.getTarget(), content.getRole());
 			
 			if(content.getRole() == Role.BODYGUARD){
@@ -196,7 +197,7 @@ public class Estimate extends AbstractEstimate{
 			}else if(content.getRole() == Role.SEER){
 				for(RoleCombination rc: probs.getRoleCombinations()){
 					if(rc.isVillagerTeam(talk.getAgent())){
-						// 村人陣営から二人目の占いCO
+						// 村人陣営から二人目の占いCO(③)
 						if(rc.countVillagerTeam(getCoSet(Role.SEER)) == 2)
 							probs.update(rc, rates.get("2_SEER_CO_FROM_VILLGER_TEAM"));
 						// 既に人狼陣営が占いCOしている状態での初めての村人陣営占いCO(①を解除)
@@ -207,6 +208,12 @@ public class Estimate extends AbstractEstimate{
 						if(rc.countVillagerTeam(getCoSet(Role.SEER)) < 1 && rc.countWerewolfTeam(getCoSet(Role.SEER)) == 1)
 							probs.update(rc, rates.get("ONLY_SEER_CO_FROM_WEREWOLF_TEAM"));
 					}
+				}
+			}else if(content.getRole() == Role.VILLAGER){
+				for(RoleCombination rc: probs.getRoleCombinations()){
+					// 占いCOの取り消しによって村人陣営から2人の占いCOだったのが1人になった(③を解除)
+					if(rc.countVillagerTeam(beforeCoSeerSet) == 2 && rc.countVillagerTeam(getCoSet(Role.SEER)) == 1)
+						probs.restore(rc, rates.get("2_SEER_CO_FROM_VILLGER_TEAM"));
 				}
 			}else if(content.getRole() == Role.MEDIUM){
 				for(RoleCombination rc: probs.getRoleCombinations()){
