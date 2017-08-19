@@ -75,7 +75,7 @@ public class McreWerewolf extends AbstractMcreRole {
 			return new Content(new ComingoutContentBuilder(getGameInfo().getAgent(), getGameInfo().getRole())).getText();
 		}
 		
-		Agent target = decideVoteTarget();
+		Agent target = getVoteTarget();
 		
 		if(joinedPowerPlay) { // パワープレイのとき
 			// まだ誰も投票依頼をしていなかったら投票依頼をする
@@ -100,7 +100,7 @@ public class McreWerewolf extends AbstractMcreRole {
 	public Agent vote() {
 		if(!isTodayVoted() || joinedPowerPlay) { // 初回とパワープレイ時
 			setTodayVoted(true);
-			return decideVoteTarget();
+			return getVoteTarget();
 		}
 		// 再投票
 		Counter<Agent> c = new Counter<>();
@@ -139,7 +139,7 @@ public class McreWerewolf extends AbstractMcreRole {
 		}
 	}
 	
-	protected Agent decideVoteTarget(){
+	public Agent getVoteTarget(){
 		List<Agent> candidate = new ArrayList<>(getGameInfo().getAliveAgentList());
 		candidate.remove(getGameInfo().getAgent());
 		

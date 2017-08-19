@@ -90,4 +90,9 @@ public class McrePlayer implements EstimatePlayer {
 	public AbstractEstimate getPretendVillagerEstimate() {
 		return player.getPretendVillagerEstimate();
 	}
+
+	@Override
+	public Agent getVoteTarget() {
+		return player.getVoteTarget();
+	}
 }

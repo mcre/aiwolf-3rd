@@ -119,4 +119,9 @@ public class DebugVisualizePlayer implements EstimatePlayer {
 		estimateGraphs.get(2).refreshWerewolfLikeness(player.getPretendVillagerEstimate().getWerewolfLikeness());
 	}
 
+	@Override
+	public Agent getVoteTarget() {
+		return player.getVoteTarget();
+	}
+
 }

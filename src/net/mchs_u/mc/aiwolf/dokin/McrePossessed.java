@@ -68,7 +68,7 @@ public class McrePossessed extends AbstractMcreRole {
 			}
 		}
 		
-		Agent vTarget = decideVoteTarget();
+		Agent vTarget = getVoteTarget();
 		
 		if(vTarget == null)
 			return Talk.SKIP;
@@ -82,7 +82,7 @@ public class McrePossessed extends AbstractMcreRole {
 	public Agent vote() {
 		if(!isTodayVoted() || joinedPowerPlay) { // 初回とパワープレイ時
 			setTodayVoted(true);
-			return decideVoteTarget();
+			return getVoteTarget();
 		}
 		// 再投票
 		Counter<Agent> c = new Counter<>();
@@ -104,7 +104,7 @@ public class McrePossessed extends AbstractMcreRole {
 		return max(candidate, getSubjectiveEstimate().getVillagerTeamLikeness(), true);
 	}
 	
-	private Agent decideVoteTarget(){
+	public Agent getVoteTarget(){
 		List<Agent> candidate = new ArrayList<>(getGameInfo().getAliveAgentList());
 		candidate.remove(getGameInfo().getAgent());
 		

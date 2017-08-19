@@ -21,7 +21,7 @@ public class McreVillager extends AbstractMcreRole {
 	
 	@Override
 	public String talk() {
-		Agent target = decideVoteTarget();
+		Agent target = getVoteTarget();
 		if(target == null)
 			return Talk.SKIP;
 		if(declareVotedTarget != null && target.equals(declareVotedTarget))
@@ -34,7 +34,7 @@ public class McreVillager extends AbstractMcreRole {
 	public Agent vote() {
 		if(!isTodayVoted()) { // 初回
 			setTodayVoted(true);
-			return decideVoteTarget();
+			return getVoteTarget();
 		}
 		// 再投票
 		Counter<Agent> c = new Counter<>();
@@ -46,7 +46,7 @@ public class McreVillager extends AbstractMcreRole {
 	}
 	
 	//生存者のうち、客観目線で最も人狼っぽいひとに投票
-	private Agent decideVoteTarget(){
+	public Agent getVoteTarget(){
 		List<Agent> candidate = new ArrayList<>(getGameInfo().getAliveAgentList());
 		candidate.remove(getGameInfo().getAgent());
 		

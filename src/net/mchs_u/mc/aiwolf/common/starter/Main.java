@@ -19,7 +19,6 @@ public class Main {
 		Role role = null;
 		
 		List<PlayerDefinition> playerDefinitions = new ArrayList<>();
-		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.curry.McrePlayer.class, false, null, "curry"));
 		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.dokin_snapshot.McrePlayer.class, false, null, "dokin_ss"));
 		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.dokin.McrePlayer.class, isVisualize, role, "dokin"));
 
