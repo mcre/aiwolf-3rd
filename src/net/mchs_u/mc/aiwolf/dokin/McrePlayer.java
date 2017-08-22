@@ -19,8 +19,14 @@ public class McrePlayer implements EstimatePlayer {
 		player.update(gameInfo);
 	}
 
-	public final void initialize(GameInfo gameInfo, GameSetting gameSetting) {
+	public final void initialize(GameInfo gameInfo, GameSetting gameSetting) {	
 		Role myRole = gameInfo.getRole();
+		if(myRole == null) {
+			System.out.println("NULLバグ発生！！！");
+			player = new McreVillager();
+			player.initialize(gameInfo, gameSetting);
+			return;
+		}
 		switch (myRole) {
 		case VILLAGER:
 			player = new McreVillager();
