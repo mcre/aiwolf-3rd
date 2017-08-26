@@ -19,9 +19,7 @@ public class Main {
 		Role role = null;
 		
 		List<PlayerDefinition> playerDefinitions = new ArrayList<>();
-		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.dokin_snapshot.McrePlayer.class, false, null, "dokin_ss"));
 		playerDefinitions.add(new PlayerDefinition(net.mchs_u.mc.aiwolf.dokin.McrePlayer.class, isVisualize, role, "dokin"));
-
 		int count = 0;
 		while(playerDefinitions.size() < playerNum){
 			playerDefinitions.add(new PlayerDefinition(org.aiwolf.sample.player.SampleRoleAssignPlayer.class, false, null, String.format("smpl%02d", count++)));

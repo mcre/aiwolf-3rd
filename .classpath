@@ -27,6 +27,5 @@
 			<attribute name="javadoc_location" value="file:/Users/m_cre/GoogleDrive/Documents/programming/java/aiwolf/aiwolf-gat2017/lib/docs/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/McrePlayer-gat2017.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
